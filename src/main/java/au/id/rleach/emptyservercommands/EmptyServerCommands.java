@@ -1,8 +1,13 @@
 package au.id.rleach.emptyservercommands;
 
+import com.google.common.reflect.TypeToken;
 import com.google.inject.Inject;
+import ninja.leaping.configurate.ConfigurationNode;
 import ninja.leaping.configurate.commented.CommentedConfigurationNode;
 import ninja.leaping.configurate.objectmapping.ObjectMappingException;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializer;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializerCollection;
+import ninja.leaping.configurate.objectmapping.serialize.TypeSerializers;
 import org.slf4j.Logger;
 import org.spongepowered.api.Sponge;
 import org.spongepowered.api.config.ConfigDir;
@@ -18,6 +23,8 @@ import org.spongepowered.api.text.format.TextColors;
 import org.spongepowered.api.text.format.TextStyles;
 
 import java.nio.file.Path;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 
 @Plugin(
         id = "emptyservercommands",
@@ -43,6 +50,10 @@ public class EmptyServerCommands {
         this.setup();
     }
 
+    static {
+        TypeSerializers.getDefaultSerializers().registerType(TypeToken.of(Duration.class), new ESCDurationSerializer());
+    }
+
     private void setup(){
         try {
             final CommentedConfigurationNode configNode = ConfigLoader.loadConfigUnchecked("emptyservercommands.conf", this.configDir, this.container);
@@ -61,5 +72,19 @@ public class EmptyServerCommands {
     }
 
 
+    private static class ESCDurationSerializer  implements TypeSerializer<Duration> {
 
+        @Override public Duration deserialize(TypeToken<?> type, ConfigurationNode value) throws ObjectMappingException {
+            try {
+                return Duration.parse(value.getString());
+            } catch (final DateTimeParseException e){
+                throw new ObjectMappingException(e);
+            }
+
+        }
+
+        @Override public void serialize(TypeToken<?> type, Duration obj, ConfigurationNode value) throws ObjectMappingException {
+            value.setValue(obj.toString());
+        }
+    }
 }
